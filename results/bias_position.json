@@ -1,0 +1,109 @@
+{
+  "reference": "expected",
+  "split": "dev",
+  "model": "qwen/qwen3.8-27b",
+  "prompt": "prompts/judge_pairwise_v1.txt",
+  "seed": 42,
+  "dry_run": false,
+  "length_confound": {
+    "available": true,
+    "mean_len_good": 196.83050847457628,
+    "mean_len_bad": 69.15686274509804,
+    "perfectly_separable_by_length": true
+  },
+  "position": {
+    "records": [
+      {
+        "good_id": 44,
+        "bad_id": 47,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      },
+      {
+        "good_id": 74,
+        "bad_id": 57,
+        "raw_good_first": "B",
+        "raw_good_second": "A",
+        "winner_good_first": "bad",
+        "winner_good_second": "bad"
+      },
+      {
+        "good_id": 17,
+        "bad_id": 36,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      },
+      {
+        "good_id": 31,
+        "bad_id": 9,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      },
+      {
+        "good_id": 72,
+        "bad_id": 23,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      },
+      {
+        "good_id": 32,
+        "bad_id": 63,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      },
+      {
+        "good_id": 4,
+        "bad_id": 35,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      },
+      {
+        "good_id": 76,
+        "bad_id": 92,
+        "raw_good_first": "A",
+        "raw_good_second": "A",
+        "winner_good_first": "good",
+        "winner_good_second": "bad"
+      },
+      {
+        "good_id": 51,
+        "bad_id": 108,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      },
+      {
+        "good_id": 18,
+        "bad_id": 12,
+        "raw_good_first": "A",
+        "raw_good_second": "B",
+        "winner_good_first": "good",
+        "winner_good_second": "good"
+      }
+    ],
+    "n_pairs": 10,
+    "accuracy_good_shown_first": 0.9,
+    "accuracy_good_shown_second": 0.8,
+    "accuracy_both_orders": 0.8,
+    "flip_rate": 0.1,
+    "pick_A": 11,
+    "pick_B": 9,
+    "pick_tie": 0,
+    "pick_A_rate_excl_ties": 0.55,
+    "p_value": 0.8238029479980469,
+    "verdict": "no significant position preference (small n has low power; see flip rate)"
+  }
+}

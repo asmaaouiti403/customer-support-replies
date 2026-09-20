@@ -1,0 +1,97 @@
+{
+  "reference": "expected",
+  "split": "dev",
+  "model": "qwen/qwen3.8-27b",
+  "prompt": "prompts/judge_pairwise_v1.txt",
+  "seed": 42,
+  "dry_run": false,
+  "length_confound": {
+    "available": true,
+    "mean_len_good": 196.83050847457628,
+    "mean_len_bad": 69.15686274509804,
+    "perfectly_separable_by_length": true
+  },
+  "verbosity_label": "good",
+  "verbosity": {
+    "records": [
+      {
+        "id": 79,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "original",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "B"
+      },
+      {
+        "id": 17,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "original",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "B"
+      },
+      {
+        "id": 4,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "original",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "B"
+      },
+      {
+        "id": 90,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "original",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "B"
+      },
+      {
+        "id": 37,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "original",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "B"
+      },
+      {
+        "id": 32,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "original",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "B"
+      },
+      {
+        "id": 31,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "tie",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "tie"
+      },
+      {
+        "id": 18,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "original",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "B"
+      },
+      {
+        "id": 103,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "tie",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "tie"
+      },
+      {
+        "id": 16,
+        "winner_padded_second": "tie",
+        "winner_padded_first": "tie",
+        "raw_padded_second": "tie",
+        "raw_padded_first": "tie"
+      }
+    ],
+    "n_replies": 10,
+    "padded_wins": 0,
+    "original_wins": 7,
+    "ties": 13,
+    "padded_win_rate_excl_ties": 0.0,
+    "tie_rate": 0.65,
+    "p_value": 0.015625,
+    "verdict": "reverse verbosity effect: prefers the SHORTER twin (filler penalised)"
+  }
+}
