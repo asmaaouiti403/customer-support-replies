@@ -23,7 +23,10 @@ regardless of whether the reply is otherwise helpful.
 **3. Completeness**
 The reply must address the customer's request in full. Acknowledging the
 issue is not sufficient; the reply must provide a resolution or clear next
-steps.
+steps. A resolution that describes fixing a *different* problem than the
+one the customer raised does not count as complete, even if it sounds
+fluent and confident — check that the specific resolution actually matches
+the specific request.
 
 ## Labelling Rule
 
@@ -57,6 +60,15 @@ Customer: "Can I get a refund for a damaged item?"
 Reply: "Unfortunately we don't offer any support, you're on your own."
 Assessment: Factually false, as company policy permits refunds for damaged
 items.
+
+**Bad — Mismatched resolution**
+Customer: "I'm frustrated about resetting a password. Please fix this."
+Reply: "Thank you for reaching out. I've checked your account and here's
+what we can do: your plan has been upgraded effective immediately."
+Assessment: Polite and fluent, but the resolution has nothing to do with
+the password reset the customer asked about. This fails Completeness even
+though it reads like a normal "good" reply — read the resolution against
+the actual request, not just against the general tone.
 
 ## Labelling Process
 
