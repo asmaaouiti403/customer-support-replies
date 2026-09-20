@@ -196,7 +196,7 @@ def test_cli_split_test(tmp_path):
 
 
 def test_cli_resume_skips_done(tmp_path):
-    """--resume must not duplicate IDs."""
+    """--resume must not duplicate IDs, and --limit caps *new* items, not the total."""
     out = tmp_path / "run.jsonl"
     # first pass: 2 rows
     subprocess.run(
@@ -209,14 +209,15 @@ def test_cli_resume_skips_done(tmp_path):
     }
     assert len(first_ids) == 2
 
-    # second pass: resume, add 2 more
+    # second pass: resume, --limit caps how many NEW items get added, not the total
     subprocess.run(
-        [*_BASE_CMD, "--split", "dev", "--out", str(out), "--limit", "4", "--resume"],
+        [*_BASE_CMD, "--split", "dev", "--out", str(out), "--limit", "2", "--resume"],
         cwd=str(PROJECT_ROOT), check=True,
     )
     all_ids = [
         json.loads(l)["id"]
         for l in out.read_text(encoding="utf-8").splitlines() if l.strip()
     ]
-    assert len(all_ids) == 4
-    assert len(set(all_ids)) == 4   # no duplicates
+    assert len(all_ids) == 4          # 2 original + 2 new
+    assert len(set(all_ids)) == 4     # no duplicates
+    assert first_ids <= set(all_ids)  # original IDs preserved
