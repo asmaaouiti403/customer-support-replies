@@ -1,0 +1,14 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "prompt_version": "system_v1",
+  "git_commit": "55e0846",
+  "split": "dev",
+  "item_count": 7,
+  "error_count": 1,
+  "input_tokens": 1923,
+  "output_tokens": 1052,
+  "hypothetical_cost_usd": 0.00046,
+  "total_time_s": 227.84,
+  "daily_limit_hit": true,
+  "timestamp": "2026-09-20T15:10:19.356817+00:00"
+}

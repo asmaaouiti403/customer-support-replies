@@ -77,23 +77,30 @@ class ResultRow(BaseModel):
 
 
 def groq_json_schema(model: type[BaseModel], strict: bool = True) -> dict:
-    """
-    Build the response_format dict for Groq's json_schema mode.
+    schema = model.model_json_schema()
 
-        response_format=groq_json_schema(SystemOutput)
+    def fix_object_schema(obj: dict) -> None:
+        if obj.get("type") == "object":
+            obj["additionalProperties"] = False
 
-    Works for any Pydantic model; used for both SystemOutput and JudgeResult.
-    Set strict=False for models that don't support constrained decoding.
-    """
+            for value in obj.get("properties", {}).values():
+                if isinstance(value, dict):
+                    fix_object_schema(value)
+
+        for value in obj.get("$defs", {}).values():
+            if isinstance(value, dict):
+                fix_object_schema(value)
+
+    fix_object_schema(schema)
+
     return {
         "type": "json_schema",
         "json_schema": {
             "name": model.__name__,
             "strict": strict,
-            "schema": model.model_json_schema(),
+            "schema": schema,
         },
     }
-
 
 # ── I/O helpers
 
