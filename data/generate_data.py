@@ -1,183 +1,158 @@
-"""
-generate_data.py
-
-Generates the synthetic golden set for the customer-support-replies task.
-
-Fix vs. the original version (see postmortem.md #1): the old generator
-picked a reply's resolution sentence independently of the customer's topic,
-so a large fraction of "good"-labelled items actually resolved a different
-problem than the one raised (e.g. a password-reset question "resolved" by
-upgrading a plan). That's a Completeness failure per labelling_guide.md,
-and it silently poisoned expected_label for ~90% of the "good" items.
-
-The fix here is structural, not a random-seed tweak: every topic has
-exactly one designated correct resolution (TOPIC_TO_RESOLUTION), and a
-"good" item can ONLY be built using its own topic's resolution. It is no
-longer possible for the generator to produce a topic/resolution mismatch.
-
-Output: one JSON object per line, with label_1/label_2 left empty for
-human labelling (per labelling_guide.md), and expected_label filled in as
-a provisional reference only -- see postmortem.md re: keeping this marked
-provisional until real human labels exist.
-"""
-
-import argparse
 import json
 import random
 
-TOPICS = [
-    "billing error / double charge",
-    "discount code not working",
-    "late delivery",
-    "missing item in an order",
-    "product defect",
-    "refund for a damaged item",
-    "warranty claim",
-    "cancelling a subscription",
-    "changing a shipping address",
-    "closing an account",
-    "downgrading a plan",
-    "how to return a product",
-    "requesting an invoice",
-    "resetting a password",
-    "upgrading a plan",
-]
+random.seed(42)
 
-# Exactly one correct resolution per topic. Do not add a second resolution
-# per topic without also updating any code that assumes this 1:1 mapping.
-TOPIC_TO_RESOLUTION = {
-    "billing error / double charge": "we've refunded the duplicate charge",
-    "discount code not working": "I've applied a new working discount code: SAVE10",
-    "late delivery": "I've expedited your shipment and it will arrive within 2 business days",
-    "missing item in an order": "we're shipping the missing item at no extra cost",
-    "product defect": "we've issued a replacement, shipped today",
-    "refund for a damaged item": "we've processed a full refund, it will appear in 3-5 business days",
-    "warranty claim": "your warranty claim has been approved and a replacement will ship today",
-    "cancelling a subscription": "your subscription has been cancelled, no further charges will apply",
-    "changing a shipping address": "your shipping address has been updated for future orders",
-    "closing an account": "your account has been closed and no further charges will apply",
-    "downgrading a plan": "your plan has been downgraded effective immediately",
-    "how to return a product": "you can return the item using the prepaid label attached",
-    "requesting an invoice": "I've emailed a copy of your invoice to your registered address",
-    "resetting a password": "I've sent a password reset link to your registered email",
-    "upgrading a plan": "your plan has been upgraded effective immediately",
+# Each topic now maps to its own set of solutions, so a "good" reply always
+# resolves the problem the customer actually raised. Previously `solution`
+# was chosen independently of `topic`, which produced replies like "your
+# plan has been upgraded" for a password-reset request — factually
+# unrelated to the request, but still labelled "good". That mismatch
+# violates the Completeness criterion in labelling_guide.md and would have
+# caused human labellers to disagree with the generator's expected_label.
+TOPIC_SOLUTIONS = {
+    "a refund for a damaged item": [
+        "we've processed a full refund, it will appear in 3-5 business days",
+        "we've issued a replacement, shipped today",
+    ],
+    "a late delivery": [
+        "we've expedited a replacement shipment, it will arrive within 2 business days",
+        "we've issued a refund for the delivery delay",
+    ],
+    "cancelling a subscription": [
+        "your subscription has been cancelled, no further charges will apply",
+    ],
+    "resetting a password": [
+        "I've sent a password reset link to your registered email",
+    ],
+    "a billing error / double charge": [
+        "we've refunded the duplicate charge",
+    ],
+    "how to return a product": [
+        "you can return the item using the prepaid label attached",
+    ],
+    "a discount code not working": [
+        "I've applied a new working discount code: SAVE10",
+    ],
+    "changing a shipping address": [
+        "your shipping address has been updated for future orders",
+    ],
+    "a missing item in an order": [
+        "we're shipping the missing item at no extra cost",
+    ],
+    "upgrading a plan": [
+        "your plan has been upgraded effective immediately",
+    ],
+    "downgrading a plan": [
+        "your plan has been downgraded effective immediately, and your next invoice will reflect the new rate",
+    ],
+    "a warranty claim": [
+        "we've approved your warranty claim and a replacement is on its way",
+    ],
+    "requesting an invoice": [
+        "I've attached a copy of your invoice to this email",
+    ],
+    "a product defect": [
+        "we've issued a replacement, shipped today",
+    ],
+    "closing an account": [
+        "your account has been closed and no further charges will apply",
+    ],
 }
 
-CUSTOMER_MESSAGE_TEMPLATES = [
-    "Hi, I have an issue with {topic_a}. Can you help me?",
+topics = list(TOPIC_SOLUTIONS.keys())
+
+customer_templates = [
+    "Hi, I have an issue with {topic}. Can you help me?",
     "Hello, I need help regarding {topic}. This is urgent.",
+    "I'm writing about {topic}. What are my options?",
     "Can someone assist me with {topic}? I've been waiting for days.",
     "I'm frustrated about {topic}. Please fix this.",
-    "I'm writing about {topic}. What are my options?",
 ]
 
-# "a "/"an " article handling for templates that need "a/an <topic>"
-TOPICS_NEED_ARTICLE = {
-    "billing error / double charge",
-    "discount code not working",
-    "late delivery",
-    "missing item in an order",
-    "product defect",
-    "refund for a damaged item",
-    "warranty claim",
-}
-
-
-def article_for(topic: str) -> str:
-    return "an " if topic[0] in "aeiou" else "a "
-
-
-def render_customer_message(template: str, topic: str) -> str:
-    if "{topic_a}" in template:
-        art = article_for(topic) if topic in TOPICS_NEED_ARTICLE else ""
-        return template.format(topic_a=f"{art}{topic}")
-    if topic in TOPICS_NEED_ARTICLE:
-        return template.format(topic=f"{article_for(topic)}{topic}")
-    return template.format(topic=topic)
-
-
-GOOD_REPLY_TEMPLATES = [
-    "Hi, thank you for reaching out about {topic}. I've checked your account "
-    "and here's what we can do: {resolution}. Let me know if you need "
-    "anything else!",
-    "Hello! I'm sorry for the trouble with {topic}. Here's the solution: "
-    "{resolution}. Feel free to reach out again if you have questions.",
+good_reply_templates = [
+    "Hi, thank you for reaching out about {topic}. I've checked your account and here's what we can do: {solution}. Let me know if you need anything else!",
+    "Hello! I'm sorry for the trouble with {topic}. Here's the solution: {solution}. Feel free to reach out again if you have questions.",
 ]
 
-BAD_REPLY_TEMPLATES = {
-    "impolite": "That's not our problem. You should have read the terms about {topic}.",
-    "refuses_help": "For {topic}, unfortunately we don't offer any support, you're on your own.",
-    "incomplete": "Hi, regarding {topic}, we can help.",
-}
+bad_incomplete_templates = [
+    "Hi, regarding {topic}, we can help.",  # missing actual solution
+]
+
+bad_rude_templates = [
+    "That's not our problem. You should have read the terms about {topic}.",
+]
+
+bad_incorrect_templates = [
+    "For {topic}, unfortunately we don't offer any support, you're on your own.",  # false — policy actually allows it
+]
+
+# Extra "good-looking but wrong" category: a fluent, polite reply that
+# resolves a DIFFERENT problem than the one raised. This is the exact
+# failure mode the old generator produced by accident; keeping it here
+# on purpose (clearly labelled "bad") gives the judge and the labellers
+# real mismatched-topic cases to catch, instead of hiding the bug.
+def _mismatched_solution(topic: str, rng: random.Random) -> str:
+    other_topics = [t for t in topics if t != topic]
+    wrong_topic = rng.choice(other_topics)
+    return rng.choice(TOPIC_SOLUTIONS[wrong_topic])
 
 
-def make_good_reply(topic: str) -> str:
-    resolution = TOPIC_TO_RESOLUTION[topic]
-    template = random.choice(GOOD_REPLY_TEMPLATES)
-    return template.format(topic=topic, resolution=resolution)
+def make_item(item_id, split, rng):
+    topic = rng.choice(topics)
+    customer_message = rng.choice(customer_templates).format(topic=topic)
 
+    kind = rng.choices(
+        ["good", "bad_incomplete", "bad_rude", "bad_incorrect", "bad_mismatched"],
+        weights=[0.5, 0.15, 0.12, 0.13, 0.10],
+    )[0]
 
-def make_bad_reply(topic: str) -> str:
-    kind = random.choice(list(BAD_REPLY_TEMPLATES.keys()))
-    return BAD_REPLY_TEMPLATES[kind].format(topic=topic)
+    if kind == "good":
+        solution = rng.choice(TOPIC_SOLUTIONS[topic])
+        reply = rng.choice(good_reply_templates).format(topic=topic, solution=solution)
+        expected_label = "good"
+    elif kind == "bad_incomplete":
+        reply = rng.choice(bad_incomplete_templates).format(topic=topic)
+        expected_label = "bad"
+    elif kind == "bad_rude":
+        reply = rng.choice(bad_rude_templates).format(topic=topic)
+        expected_label = "bad"
+    elif kind == "bad_incorrect":
+        reply = rng.choice(bad_incorrect_templates).format(topic=topic)
+        expected_label = "bad"
+    else:  # bad_mismatched
+        solution = _mismatched_solution(topic, rng)
+        reply = rng.choice(good_reply_templates).format(topic=topic, solution=solution)
+        expected_label = "bad"
 
-
-def generate(n_items: int, dev_fraction: float, seed: int):
-    random.seed(seed)
-    rows = []
-    n_good = n_items // 2
-    n_bad = n_items - n_good
-    n_dev = round(n_items * dev_fraction)
-
-    labels = ["good"] * n_good + ["bad"] * n_bad
-    random.shuffle(labels)
-
-    for i, label in enumerate(labels, start=1):
-        topic = random.choice(TOPICS)
-        msg_template = random.choice(CUSTOMER_MESSAGE_TEMPLATES)
-        customer_message = render_customer_message(msg_template, topic)
-
-        if label == "good":
-            reply = make_good_reply(topic)
-        else:
-            reply = make_bad_reply(topic)
-
-        split = "dev" if i <= n_dev else "test"
-
-        rows.append(
-            {
-                "id": i,
-                "customer_message": customer_message,
-                "reply": reply,
-                "label_1": "",
-                "label_2": "",
-                "expected_label": label,  # provisional reference only
-                "split": split,
-            }
-        )
-    return rows
+    return {
+        "id": item_id,
+        "customer_message": customer_message,
+        "reply": reply,
+        "label_1": "",       # fill in manually while labelling
+        "label_2": "",       # fill in manually while labelling
+        "expected_label": expected_label,  # generator's own reference, provisional
+        "split": split,
+    }
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--n-items", type=int, default=160)
-    parser.add_argument("--dev-fraction", type=float, default=0.6875)  # ~110/160
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--out", type=str, default="golden_set.jsonl")
-    args = parser.parse_args()
+    rng = random.Random(42)
+    n_total = 160
+    n_dev = 110
+    items = []
+    for i in range(1, n_total + 1):
+        split = "dev" if i <= n_dev else "test"
+        items.append(make_item(i, split, rng))
 
-    rows = generate(args.n_items, args.dev_fraction, args.seed)
+    with open("data/golden_set.jsonl", "w", encoding="utf-8") as f:
+        for item in items:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
-    with open(args.out, "w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-    print(f"Wrote {len(rows)} items to {args.out}")
-    print("NOTE: expected_label is a provisional reference only.")
-    print("Human labelling (label_1 / label_2) still needs to happen per")
-    print("labelling_guide.md before this can be used for real agreement")
-    print("or judge-reliability numbers.")
+    print(f"Generated {n_total} items -> data/golden_set.jsonl")
+    print(f"Dev: {n_dev}, Test: {n_total - n_dev}")
 
 
 if __name__ == "__main__":
     main()
+
